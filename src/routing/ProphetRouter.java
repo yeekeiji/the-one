@@ -28,8 +28,8 @@ import core.SimClock;
  * Anders Lindgren et al.
  */
 public class ProphetRouter extends ActiveRouter {
-	/** delivery predictability initialization constant*/
-	public static final double P_INIT = 0.75;
+	/** delivery predictability initialization constant default value */
+	public static final double DEFAULT_P_INIT = 0.75;
 	/** delivery predictability transitivity scaling constant default value */
 	public static final double DEFAULT_BETA = 0.25;
 	/** delivery predictability aging constant */
@@ -49,10 +49,18 @@ public class ProphetRouter extends ActiveRouter {
 	 */
 	public static final String BETA_S = "beta";
 
+	/**
+	 * Initialization Constant (p_init) -setting id ({@value}).
+	 * Default value for setting is {@link #DEFAULT_P_INIT}.
+	 */
+	public static final String P_INIT_S = "p_init";
+
 	/** the value of nrof seconds in time unit -setting */
 	private int secondsInTimeUnit;
 	/** value of beta setting */
 	private double beta;
+	/** value of p_init setting */
+	private double p_init;
 
 	/** delivery predictabilities */
 	private Map<DTNHost, Double> preds;
@@ -74,6 +82,12 @@ public class ProphetRouter extends ActiveRouter {
 		else {
 			beta = DEFAULT_BETA;
 		}
+		if (prophetSettings.contains(P_INIT_S)) {
+			p_init = prophetSettings.getDouble(P_INIT_S);
+		}
+		else{
+			p_init = DEFAULT_P_INIT;
+		}
 
 		initPreds();
 	}
@@ -86,6 +100,7 @@ public class ProphetRouter extends ActiveRouter {
 		super(r);
 		this.secondsInTimeUnit = r.secondsInTimeUnit;
 		this.beta = r.beta;
+		this.p_init = r.p_init;
 		initPreds();
 	}
 
@@ -114,7 +129,7 @@ public class ProphetRouter extends ActiveRouter {
 	 */
 	private void updateDeliveryPredFor(DTNHost host) {
 		double oldValue = getPredFor(host);
-		double newValue = oldValue + (1 - oldValue) * P_INIT;
+		double newValue = oldValue + (1 - oldValue) * p_init;
 		preds.put(host, newValue);
 	}
 
