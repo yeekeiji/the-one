@@ -3,12 +3,14 @@
 
 # Simulation report files
 *reports*/*.txt
+/reports
 
 # Javadocs
 *.html
 doc/stylesheet.css
 doc/resources/*.gif
 doc/package-list
+/doc/
 
 # Eclipse IDE files
 .classpath
@@ -19,6 +21,11 @@ doc/package-list
 # log files for batches of simulations
 *.log
 /log/
+
+# Don't add new data sets to the repo
+/data/
+
+/scripts/
 
 # batch settings files
 /batch_settings/
