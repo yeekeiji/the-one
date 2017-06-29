@@ -1,0 +1,43 @@
+# Base template
+Scenario.name = LMovementTest
+
+# Using linear point movement
+# testing for connectivity behavior
+Scenario.nrofHostGroups = 1
+Scenario.endTime = 105
+Scenario.updateInterval = 1
+Scenario.simulateConnections = true
+
+#External Movement file 
+ExternalMovement.file = tests/data/mv_data.txt
+
+# No events 
+Events.nrof = 0
+
+# Fixed world size
+MovementModel.worldSize = 50, 50
+
+# Ubiquitous group settings
+# can overwrite in 2ndary files 
+Group.nrofInterfaces = 1
+Group.interface1 = btInterface
+btInterface.type = SimpleBroadcastInterface
+btInterface.transmitRange = 5
+btInterface.transmitSpeed = 250k
+
+# group router & params set in 2ndary file
+# left out to throw error if 2ndary file fails
+
+# More ubiquitous group settings
+Group1.movementModel = ExternalMovement
+Group1.router = PassiveRouter
+Group1.nrofHosts = 2
+Group1.groupID = z
+Group.speed = 1,1
+
+# Report Settings
+Report.nrofReports = 2
+Report.reportDir = reports/mv_exp/
+Report.report1 = EventLogReport
+Report.report2 = LocationSnapshotReport
+LocationSnapshotReport.granularity = 1
