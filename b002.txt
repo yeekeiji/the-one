@@ -1,0 +1,42 @@
+# Base template
+Scenario.name = BaseTaxi
+
+# Using infocom2005 Dataset
+Scenario.nrofHostGroups = 1
+Scenario.endTime = 1213088836
+# 2070416
+Scenario.updateInterval = 1
+Scenario.simulateConnections = false
+
+# External Dataset load options
+# taxi truncated specific 
+ExternalEvents.nrofPreload = 500
+ExternalMovement.file = data/node_master.txt
+
+# Events Specific Settings
+Events.nrof = 0
+
+Group.nrofInterfaces = 1
+Group.interface1 = btInterface
+btInterface.type = SimpleBroadcastInterface
+btInterface.transmitRange = 10
+btInterface.transmitSpeed = 250k
+
+# Fixed world size
+MovementModel.worldSize = 588516, 4206259
+
+# group router & params set in 2ndary file
+# left out to throw error if 2ndary file fails
+
+# More ubiquitous group settings
+Group1.movementModel = ExternalMovement
+Group1.router = PassiveRouter
+Group1.nrofHosts = 10
+Group1.groupID = z
+
+# Report Settings
+Report.nrofReports = 2
+Report.reportDir = reports/mv_node/
+Report.report1 = EventLogReport
+Report.report2 = LocationSnapshotReport
+LocationSnapshotReport.granularity = 1
