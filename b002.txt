@@ -3,10 +3,9 @@ Scenario.name = BaseTaxi
 
 # Using infocom2005 Dataset
 Scenario.nrofHostGroups = 1
-Scenario.endTime = 1213088836
-# 2070416
+Scenario.endTime = 1442
 Scenario.updateInterval = 1
-Scenario.simulateConnections = false
+Scenario.simulateConnections = true
 
 # External Dataset load options
 # taxi truncated specific 
@@ -23,7 +22,7 @@ btInterface.transmitRange = 10
 btInterface.transmitSpeed = 250k
 
 # Fixed world size
-MovementModel.worldSize = 588516, 4206259
+MovementModel.worldSize = 132374, 74485
 
 # group router & params set in 2ndary file
 # left out to throw error if 2ndary file fails
