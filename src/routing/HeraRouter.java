@@ -315,6 +315,135 @@ public class HeraRouter extends ActiveRouter {
         tryOtherMessages();
     }
 
+// fix the line with comparison of getPredFor, replace with omega calcs
+    /**
+     * Tries to send all other messages to all connected hosts ordered by
+     * their hop metrics 
+     * @return The return value of {@link #tryMessagesForConnected(List)}
+     */
+    private Turple<Message, Connection> tryOtherMessages() {
+        List<Turple<Message, Connection>> messages =
+            new ArrayList<Turple<Message, Connection>>();
 
+        Collection<Message> msgCollection = getMessageCollection();
 
+        /* for all connected hosts collect all messages that have a higher
+         * reach metric value (omega var in paper) than the other host */
+        for ( Connection con : getConnections() ) {
+            DTNHost other = con.getOtherNode(getHost());
+            HeraRouter othRouter = (HeraRouter)other.getRouter();
+
+            if (othRouter.isTransfering()) {
+                continue; // skip hosts that are transferring
+            }
+
+            for ( Message m : msgCollection ) {
+                if ( othRouter.hasMessage(m.getId())) {
+                    continue; // skip messages that other one has
+                }
+                // change this check later. Need to use omega comparison
+                if (othrouter.omega(m.getTo()) > this.omega(m.getTo())) {
+                // the other node has larger reach and possibility of delivery
+                messages.add(new Turple<Message, Connection>(m,con));
+                }
+            }
+        }
+
+        if (messages.size() == 0) {
+            return null;
+        }
+
+        // sort the message-connection tuples
+        Collections.sort(messages, new TupleComparator());
+        return tryMessagesForConnected(messages); // try to send messages
+    }
+
+    /**
+     * Decision function Omega that takes the inner product of M[:, E]_A
+     * where A = node calling the function, E = the end node you want to know
+     * the reachability metric value of
+     * calcs gamma * ( M[:,E]_A ), note gamma = row vector & M[:,E]_A column
+     * vector
+     * @param host the destination host, Omega(A, host)
+     * @return reachability double value representing the likelihood that node A
+     * can reach node host
+     */
+    double omega(DTNHost host){
+        ageReachVals();
+
+        // grab the map of values for the input host, 
+        // equv to grabbing column of matrix
+        Map<Integer, Double> hopMetric = this.reach.get(host);
+        double reachability = 0;
+
+        // calculating the inner product
+        for (int h = 0; h < this.sizeofLambda; ++h){
+            double elementMult = gamma[h] * hopMetric.get(h);
+            reachability += elementMult;
+        }
+
+        return reachability;
+    }
+
+    // Need to fix this to work with HERA, verify, possibly fixed
+    /**
+     * Comparator for Message-Connection-Turples that order the turples by
+     * their hop metric by the host on the other side of the connection
+     * (GRTRMAX)
+     */
+    private class TupleComaparator implements Comparator
+        <Tuple<Message, Connection>> {
+
+        public int compare(Tuple<Message, Connection> tuple1, 
+            Tuple<Message, Connection> tuple2) {
+            // hop metric of turple1's message with turple1's connection
+            double r1 = ((HeraRouter)tuple1.getValue().
+                    getOtherNode(getHost()).getRouter()).omega(
+                    tuple1.getKey().getTo());
+
+            double r2 = ((HeraRouter)tuple2.getValue().
+                    getOtherNode(getHost()).getRouter()).omega(
+                    tuple2.getKey().getTo());
+             
+
+             // bigger value should come first ? 
+             if ( r2 - r1 == 0 ) {
+                /* equal probabilities -> let queue mode decide */
+                return compareByQueueMode(tuple1.getKey(), tuple2.getKey());
+            } else if (r2 - r1 < 0) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+    }
+
+    // change to be compliant with HERA's multi-level values 
+    // Q: what is RoutingInfo? check parent classes 
+    @Override
+    public RoutingInfo getRoutingInfo() {
+        ageReachVals();
+        RoutingInfo top = super.getRoutingInfo();
+        RoutingInfo ri = new RoutingInfo(reach.size() + 
+            " delivery predictions(s)");
+
+        for (Map.Entry<DTNHost, Map<Integer,Double>> e : reach.entrySet()) {
+            DTNHost host = e.getKey();
+            Double value = omega(host);
+
+            ri.addMoreInfo(new RoutingInfo(String.format("%s : %.6f", 
+                    host, value)));
+        }
+
+        top.addMoreInfo(ri);
+        return top;
+    }
+
+    @Override
+    public MessageRouter replicate() {
+        HeraRouter r = new HeraRouter(this);
+        return r;
+    }
+
+             
 } // Bracket end for whole class 
