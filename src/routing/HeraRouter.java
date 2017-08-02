@@ -33,7 +33,7 @@ public class HeraRouter extends ActiveRouter {
     /** size of all system pertinent arrays 
      * both gamma and lambda arrays need to match this size
      */
-    public static final int DEFAULT_SYS_SIZE = 5;
+    public static final int DEFAULT_HOPS_SIZE = 5;
     /** global trust scaling constants, default values */
     public static final double[] DEFAULT_GAMMA = {1, .5, .05, .005, .0005};
     /** delivery reachability aging constant */
@@ -54,7 +54,7 @@ public class HeraRouter extends ActiveRouter {
     /** Size of the array that defines lambda -setting id ({@value}).
      * Default values for the setting in {@link #DEFAULT_LAMBDA_SIZE 
      */
-    public static final String SIZEOF_SYS_S = "sizeOfSys";
+    public static final String HOPS_S = "hops";
     /** Hop comparison function scaling constants (gamma) -setting id
      * ({@value}).
      * default values for the setting in {@link #DEFAULT_GAMMA}.
@@ -71,7 +71,7 @@ public class HeraRouter extends ActiveRouter {
     /** value of lambda setting */
     private double[] lambda;
     /** size of lambda and gamma arrays */
-    private int sizeofSys;
+    private int hops;
     /** values of gamma setting */
     private double[] gamma;
     /** aging constant */
@@ -95,23 +95,23 @@ public class HeraRouter extends ActiveRouter {
 
         // checking for HeraRouter.lambda = x, y, z
         // Also checks for nrofLambda values. Need both
-        if (heraSettings.contains(SIZEOF_SYS_S) &&
+        if (heraSettings.contains(HOPS_S) &&
             heraSettings.contains(LAMBDA_S)) {
-            // use custom sizeofSys setting
-            sizeofSys = heraSettings.getInt(SIZEOF_SYS_S);
+            // use custom hops setting
+            hops = heraSettings.getInt(HOPS_S);
             // use custom set of lambda values
-            lambda = heraSettings.getCsvDoubles(LAMBDA_S, sizeofSys);
+            lambda = heraSettings.getCsvDoubles(LAMBDA_S, hops);
         } else{
             // use default values for both size & values if either fails
-            sizeofSys = DEFAULT_SYS_SIZE;
+            hops = DEFAULT_HOPS_SIZE;
             lambda = DEFAULT_LAMBDA;
         }
 
         // check for HeraRouter.gamma & HeraRouter.sizeofGamma
-        if (heraSettings.contains(SIZEOF_SYS_S) && 
+        if (heraSettings.contains(HOPS_S) && 
             heraSettings.contains(GAMMA_S)) {
             // use custom gamma settings from settings file
-            gamma = heraSettings.getCsvDoubles(GAMMA_S, sizeofSys);
+            gamma = heraSettings.getCsvDoubles(GAMMA_S, hops);
         } else{
             // use default values for gamma related vars
             gamma = DEFAULT_GAMMA;
@@ -137,7 +137,7 @@ public class HeraRouter extends ActiveRouter {
         super(r);
         this.secondsInTimeUnit = r.secondsInTimeUnit;
         this.alpha = r.alpha;
-        this.sizeofSys = r.sizeofSys;
+        this.hops = r.hops;
         this.lambda = r.lambda;
         this.gamma = r.gamma;
         initReach();
@@ -196,7 +196,7 @@ public class HeraRouter extends ActiveRouter {
             double INIT_VALUE = 0.0;
 
             // create an all zero dict for m_i values of "host"
-            for(int i = 0; i < this.sizeofSys; ++i){
+            for(int i = 0; i < this.hops; ++i){
                 temp.put(i, INIT_VALUE); 
             }
             // add host w/ all 0 m_i values 
@@ -235,13 +235,13 @@ public class HeraRouter extends ActiveRouter {
             // init map values for host reach has never seen to all 0 values
             if ( !reach.containsKey( e.getKey() ) ){
                 Map<Integer, Double> newHost = new HashMap<Integer, Double>();
-                for( int i = 0; i < this.sizeofSys; ++i){
+                for( int i = 0; i < this.hops; ++i){
                     newHost.put(i, 0.0);
                 }
                 this.reach.put(e.getKey(), newHost);
             }
                 // update transitive hop values for h = 1,...,H
-                for( int h = 1; h < this.sizeofSys; ++h){
+                for( int h = 1; h < this.hops; ++h){
                     // delta = how much you are changing old value by
                     double delta = lambda[h] * othersReach.get(e.getKey()).get(h - 1);
                     double rNew = this.reach.get(e.getKey()).get(h) + delta;
@@ -270,7 +270,7 @@ public class HeraRouter extends ActiveRouter {
         // age each host in reach map of maps 
         for (Map.Entry<DTNHost, Map<Integer, Double>> e : this.reach.entrySet()){
             // age each hop lvl for h = 0,...,H
-            for ( int h = 0; h < sizeofSys; ++h ) {
+            for ( int h = 0; h < hops; ++h ) {
                 double agedVal = this.reach.get(e.getKey()).get(h) * mult;
                 this.reach.get(e.getKey()).put(h, agedVal);
             }
@@ -366,7 +366,7 @@ public class HeraRouter extends ActiveRouter {
         double reachability = 0;
 
         // calculating the inner product
-        for (int h = 0; h < this.sizeofSys; ++h){
+        for (int h = 0; h < this.hops; ++h){
             double elementMult = gamma[h] * hopMetric.get(h);
             reachability += elementMult;
         }
