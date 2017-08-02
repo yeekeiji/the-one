@@ -25,7 +25,5 @@ doc/package-list
 # Don't add new data sets to the repo
 /data/
 
-/scripts/
-
 # batch settings files
 /batch_settings/
