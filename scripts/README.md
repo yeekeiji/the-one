@@ -12,15 +12,20 @@ of. By default it will be 25 taxi files. Max of 536 taxi files can be selected
 
 ### Warnings
 
- - Don't change mv the script or script/ dir. The script uses relative paths of
+ - don't move the script or script/ dir. The script uses relative paths of
    both of these to call other scripts. 
-
+ - install utm 0.4.2 from [pypi][utm].
  - assumes you have installed utm lib in a py env called python2. Please change
    this line in the script to whichever python env you have utm installed. 
 
+[utm]: https://pypi.python.org/pypi/utm
+
 ## taxi2.py
 
-Transforms individual taxi files into a modified form.
+Transforms individual taxi files into a modified form. Outputs files are of the 
+form "node<nodeID>.txt where <nodeID> is the assigned node number. These 
+nodeID's represent loop count that a particular file happened to be processed
+in. Example: the 10th file to be processed by taxi2.py will have nodeID = 10.
 
  - rearranges the columns
  - transforms GPS coords into utm coordinates

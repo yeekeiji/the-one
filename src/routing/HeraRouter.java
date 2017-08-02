@@ -14,7 +14,7 @@ import java.util.Map;
 
 import routing.util.RoutingInfo;
 
-import util.Turple;
+import util.Tuple;
 
 import core.Connection;
 import core.DTNHost;
@@ -153,7 +153,7 @@ public class HeraRouter extends ActiveRouter {
 
     // need to update this for hera
     @Override
-    public void changedCOnnection(Connection con) {
+    public void changedConnection(Connection con) {
         super.changedConnection(con);
 
         if (con.isUp()) {
@@ -238,12 +238,12 @@ public class HeraRouter extends ActiveRouter {
                 for( int i = 0; i < this.sizeofSys; ++i){
                     newHost.put(i, 0.0);
                 }
-                this.reach.put(e.getHost(), newHost);
+                this.reach.put(e.getKey(), newHost);
             }
                 // update transitive hop values for h = 1,...,H
                 for( int h = 1; h < this.sizeofSys; ++h){
                     // delta = how much you are changing old value by
-                    double delta = lambda[h] * otherReach.get(e.getKey()).get(h - 1);
+                    double delta = lambda[h] * othersReach.get(e.getKey()).get(h - 1);
                     double rNew = this.reach.get(e.getKey()).get(h) + delta;
                     this.reach.get(e.getKey()).put(h, rNew);
                 }
@@ -292,12 +292,12 @@ public class HeraRouter extends ActiveRouter {
     @Override
     public void update() {
         super.update();
-        if ( !canStartTransfer() || isTransfering() ) {
-            return; // nothing to transfer or currently transfering.
+        if ( !canStartTransfer() || isTransferring() ) {
+            return; // nothing to transfer or currently transferring.
         }
 
         // try messages that could be delivered to final recipient
-        if ( exchangeDeliverableMessage() != null) {
+        if ( exchangeDeliverableMessages() != null) {
             return;
         }
 
@@ -310,9 +310,9 @@ public class HeraRouter extends ActiveRouter {
      * their hop metrics 
      * @return The return value of {@link #tryMessagesForConnected(List)}
      */
-    private Turple<Message, Connection> tryOtherMessages() {
-        List<Turple<Message, Connection>> messages =
-            new ArrayList<Turple<Message, Connection>>();
+    private Tuple<Message, Connection> tryOtherMessages() {
+        List<Tuple<Message, Connection>> messages =
+            new ArrayList<Tuple<Message, Connection>>();
 
         Collection<Message> msgCollection = getMessageCollection();
 
@@ -322,7 +322,7 @@ public class HeraRouter extends ActiveRouter {
             DTNHost other = con.getOtherNode(getHost());
             HeraRouter othRouter = (HeraRouter)other.getRouter();
 
-            if (othRouter.isTransfering()) {
+            if (othRouter.isTransferring()) {
                 continue; // skip hosts that are transferring
             }
 
@@ -331,9 +331,9 @@ public class HeraRouter extends ActiveRouter {
                     continue; // skip messages that other one has
                 }
                 // change this check later. Need to use omega comparison
-                if (othrouter.omega(m.getTo()) > this.omega(m.getTo())) {
+                if (othRouter.omega(m.getTo()) > this.omega(m.getTo())) {
                 // the other node has larger reach and possibility of delivery
-                messages.add(new Turple<Message, Connection>(m,con));
+                messages.add(new Tuple<Message, Connection>(m,con));
                 }
             }
         }
@@ -376,16 +376,16 @@ public class HeraRouter extends ActiveRouter {
 
     // Need to fix this to work with HERA, verify, possibly fixed
     /**
-     * Comparator for Message-Connection-Turples that order the turples by
+     * Comparator for Message-Connection-Tuples that order the tuples by
      * their hop metric by the host on the other side of the connection
      * (GRTRMAX)
      */
-    private class TupleComaparator implements Comparator
+    private class TupleComparator implements Comparator
         <Tuple<Message, Connection>> {
 
         public int compare(Tuple<Message, Connection> tuple1, 
             Tuple<Message, Connection> tuple2) {
-            // hop metric of turple1's message with turple1's connection
+            // hop metric of tuple1's message with tuple1's connection
             double r1 = ((HeraRouter)tuple1.getValue().
                     getOtherNode(getHost()).getRouter()).omega(
                     tuple1.getKey().getTo());
