@@ -177,8 +177,37 @@ public class HeraRouter extends ActiveRouter {
         double updateValue = oldValue + lambda[DIRECT_HOP];
 
         // the +1 (DEFAULT VALUE) is the abs trust in a direct meeting
-        reach.get(host).replace(DIRECT_HOP, updateValue); 
+        this.reach.get(host).put(DIRECT_HOP, updateValue); 
     }
+
+    /**
+     * Return the current reachability map for a specific host's
+     * if M(h, (A, i) ) dne, add all values to the reach & init to 0
+     */
+    public Map<Integer, Double> getReachFor(DTNHost host){
+        // age reach values if they exist
+        ageReachVals();
+
+        // host exists in reach case
+        if (!reach.containsKey(host)){
+            Map<Integer, Double> temp = new HashMap<Integer, Double>();
+
+            // initial reach value for all hop levels
+            double INIT_VALUE = 0.0;
+
+            // create an all zero dict for m_i values of "host"
+            for(int i = 0; i < this.hops; ++i){
+                temp.put(i, INIT_VALUE); 
+            }
+            // add host w/ all 0 m_i values 
+            this.reach.put(host, temp);
+        }
+        
+        // return the corresponding map to input Host 
+        // return inner_map of reach = (host : inner_map(int : double))
+        return this.reach.get(host);
+    }
+
 
     /**
      * Return the current reachability value for a host's spec hop
@@ -203,8 +232,8 @@ public class HeraRouter extends ActiveRouter {
             this.reach.put(host, temp);
         }
         
-        // returns the VALUE of (host) : (hop level):VALUE
-        // inside of reach
+        // returns double inside reach for a specific host's hoplvl
+        // similar to reach[host][hoplvl] if this were a 2d array
         return this.reach.get(host).get(hopLvl);
     }
 
@@ -304,7 +333,6 @@ public class HeraRouter extends ActiveRouter {
         tryOtherMessages();
     }
 
-// fix the line with comparison of getPredFor, replace with omega calcs
     /**
      * Tries to send all other messages to all connected hosts ordered by
      * their hop metrics 
@@ -355,26 +383,30 @@ public class HeraRouter extends ActiveRouter {
      * vector
      * @param host the destination host, Omega(A, host)
      * @return reachability double value representing the likelihood that node A
-     * will reach node host
+     * will reach node "host"
      */
     double omega(DTNHost host){
         ageReachVals();
 
         // grab the map of values for the input host, 
-        // equv to grabbing column of matrix
-        Map<Integer, Double> hopMetric = this.reach.get(host);
+        // equivalent to grabbing column of matrix
+        Map<Integer, Double> hopMetric = this.getReachFor(host);
         double reachability = 0;
 
         // calculating the inner product
         for (int h = 0; h < this.hops; ++h){
-            double elementMult = gamma[h] * hopMetric.get(h);
+            // testing if reach's host call exists
+            // proven this.reach.containsKey(host) == False
+            if (!this.reach.containsKey(host) ){
+                System.out.println("!host exists\n");
+            }
+            double elementMult = this.gamma[h] * this.reach.get(host).get(h);
             reachability += elementMult;
         }
 
         return reachability;
     }
 
-    // Need to fix this to work with HERA, verify, possibly fixed
     /**
      * Comparator for Message-Connection-Tuples that order the tuples by
      * their hop metric by the host on the other side of the connection
@@ -395,7 +427,6 @@ public class HeraRouter extends ActiveRouter {
                     tuple2.getKey().getTo());
              
 
-             // bigger value should come first ? 
              if ( r2 - r1 == 0 ) {
                 /* equal probabilities -> let queue mode decide */
                 return compareByQueueMode(tuple1.getKey(), tuple2.getKey());
@@ -407,8 +438,6 @@ public class HeraRouter extends ActiveRouter {
         }
     }
 
-    // change to be compliant with HERA's multi-level values 
-    // Q: what is RoutingInfo? check parent classes 
     @Override
     public RoutingInfo getRoutingInfo() {
         ageReachVals();
@@ -435,4 +464,4 @@ public class HeraRouter extends ActiveRouter {
     }
 
              
-} // Bracket end for whole class 
+} 
