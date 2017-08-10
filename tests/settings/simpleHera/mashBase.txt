@@ -1,0 +1,44 @@
+# Base template for HERA mash test
+Scenario.name = HeraMash
+
+Scenario.nrofHostGroups = 1
+Scenario.endTime = 45
+Scenario.updateInterval = 5
+Scenario.simulateConnections = true
+
+# external movement file settings
+ExternalMovement.file = tests/data/simpleHera/mash.txt
+
+# No events --> change later
+Events.nrof = 0
+#Events1.class = MessageEventGenerator
+#Events1.interval = 1,5
+#Events1.size = 250k,500k
+#Events1.hosts = 0,7
+#Events1.prefix = M
+
+# fixed world size
+MovementModel.worldSize = 20, 5 
+
+# Group settings
+# can overwrite with secondary file
+Group.nrofInterfaces = 1
+Group.interface1 = btInterface
+btInterface.type = SimpleBroadcastInterface
+btInterface.transmitRange = 5
+btInterface.transmitSpeed = 250k
+
+# group router params
+Group1.movementModel = ExternalMovement
+Group1.router = PassiveRouter
+# HeraRouter.secondsInTimeUnit = 1
+Group1.nrofHosts = 8
+Group1.groupID = z
+Group.speed = 1,1
+
+# Report Settings
+Report.nrofReports = 2
+Report.reportDir = reports/HeraMash/
+Report.report1 = EventLogReport
+Report.report2 = LocationSnapshotReport
+LocationSnapshotReport.granularity = 1

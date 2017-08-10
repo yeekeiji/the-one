@@ -66,6 +66,7 @@ class ELog:
     def parseAttr(self):
         with open(self.logFile, 'r') as f:
             for line in f:
+                # don't grab the /n char
                 line = line[:-1]
                 content = line.split()
                 msgName = ''
@@ -76,8 +77,8 @@ class ELog:
                         msgName = elem
                         break
 
-                if 'C' in content and self.isTracked(msgName):
-                    print(content)
+                #if 'C' in content and self.isTracked(msgName):
+                #    print(content)
                 # update if tracked, add if not
                 # skip if no mgs ref in line
                 if self.isTracked(msgName):

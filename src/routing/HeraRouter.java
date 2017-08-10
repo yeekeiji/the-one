@@ -151,7 +151,6 @@ public class HeraRouter extends ActiveRouter {
         this.reach = new HashMap<DTNHost, Map<Integer, Double>>();
     }
 
-    // need to update this for hera
     @Override
     public void changedConnection(Connection con) {
         super.changedConnection(con);
@@ -347,18 +346,18 @@ public class HeraRouter extends ActiveRouter {
         /* for all connected hosts collect all messages that have a higher
          * reach metric value (omega var in paper) than the other host */
         for ( Connection con : getConnections() ) {
-            DTNHost other = con.getOtherNode(getHost());
-            HeraRouter othRouter = (HeraRouter)other.getRouter();
+            DTNHost other = con.getOtherNode( getHost() );
+            HeraRouter othRouter = ( HeraRouter )other.getRouter();
 
             if (othRouter.isTransferring()) {
                 continue; // skip hosts that are transferring
             }
 
             for ( Message m : msgCollection ) {
-                if ( othRouter.hasMessage(m.getId())) {
+                if ( othRouter.hasMessage( m.getId() ) ) {
                     continue; // skip messages that other one has
                 }
-                // change this check later. Need to use omega comparison
+                // main check for determining to pass message forward
                 if (othRouter.omega(m.getTo()) > this.omega(m.getTo())) {
                 // the other node has larger reach and possibility of delivery
                 messages.add(new Tuple<Message, Connection>(m,con));
@@ -385,7 +384,7 @@ public class HeraRouter extends ActiveRouter {
      * @return reachability double value representing the likelihood that node A
      * will reach node "host"
      */
-    double omega(DTNHost host){
+    public double omega(DTNHost host){
         ageReachVals();
 
         // grab the map of values for the input host, 
@@ -395,11 +394,6 @@ public class HeraRouter extends ActiveRouter {
 
         // calculating the inner product
         for (int h = 0; h < this.hops; ++h){
-            // testing if reach's host call exists
-            // proven this.reach.containsKey(host) == False
-            if (!this.reach.containsKey(host) ){
-                System.out.println("!host exists\n");
-            }
             double elementMult = this.gamma[h] * this.reach.get(host).get(h);
             reachability += elementMult;
         }
@@ -422,6 +416,7 @@ public class HeraRouter extends ActiveRouter {
                     getOtherNode(getHost()).getRouter()).omega(
                     tuple1.getKey().getTo());
 
+            // hop metric of tuple2's message with tuple2's connection
             double r2 = ((HeraRouter)tuple2.getValue().
                     getOtherNode(getHost()).getRouter()).omega(
                     tuple2.getKey().getTo());

@@ -27,3 +27,6 @@ doc/package-list
 
 # batch settings files
 /batch_settings/
+
+# python pyc files
+*.pyc

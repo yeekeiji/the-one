@@ -15,19 +15,25 @@ class FileParse:
         '''
         self.file = fileName
 
-    def getPathLeaf(self, path):
+    def getPathLeaf(self, path=None):
         '''
             Grabs a file name w/out the full path 
 
             Parameters
             ----------
             path : String describing the full file path name of a file
+            default value : obj's own self.file that describes the FileParse
+            obj, assigned inside of function
 
             Examples
             --------
             path = '/home/userName/Documents/coolFile.txt'
             getPathLeaf(path) -> returns : coolFile.txt
         '''
+        # sets default value for path if no value is given
+        if path == None:
+            path = self.file
+            
         head, tail = ntpath.split(path)
         return tail
 

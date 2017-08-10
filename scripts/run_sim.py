@@ -11,6 +11,8 @@ class DTNSim:
     # base_file = str of base file name
     # specs_file = str of specs file name
     def __init__(self, base_file, specs_file):
+
+        # assumes you run this command inside the the-one/
         self.cmd = '/bin/sh one.sh -b 1 file1 file2'
         self.base = base_file
         self.specs = specs_file
@@ -29,7 +31,7 @@ class DTNSim:
             f.write( 'Settings File = ' + self.specs + '\n' )
             f.write( 'Log File = ' + logFile + '\n' )
             f.write( 'ID = ' + baseFile.getCoreName(0) + \
-                '_' + self.getCoreName(self.specs, 0) + '\n')
+                '_' + specsFile.getCoreName(0) + '\n')
             f.write( 'Dataset = ' + baseFile.getDataName() + '\n' )
             d = specsFile.getSpecs()
             for i in d:
@@ -39,10 +41,16 @@ class DTNSim:
     def RunCmd(self):
         # creating correct cmd for bash
         self.cmd = shlex.split(self.cmd)
+
+        # replaces 
+        # file1 = base.txt // index 4 object
+        # file2 = spec.txt // index 5 object
         self.cmd[4] = self.base
         self.cmd[5] = self.specs
 
         # create logfile name from specs file
+        # logFile = string containing the output logFile name
+        # ex. logFile = /log/comp00.log where comp00 = spec.txt
         logFile = self.getCoreName(self.specs, 1)
 
         with Popen(self.cmd, stdout=PIPE, stderr=STDOUT,\
@@ -53,6 +61,8 @@ class DTNSim:
                 f.write(line.decode("utf-8"))
 
 def main():
+
+    # usage: python run_sim.py baseFile.txt specfile1.txt ... specfileN.txt
 
     # get command line args, base file and spec files
     parser = argparse.ArgumentParser()
