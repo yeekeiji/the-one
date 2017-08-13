@@ -170,6 +170,25 @@ public class HeraRouter extends ActiveRouter {
     private void updateReachFor(DTNHost host){
         int DIRECT_HOP = 0;
 
+        if(!reach.containsKey(host)){
+            Map<Integer, Double> newHost = new HashMap<Integer, Double>();
+            
+            // initial reach value for all hop levels
+            double INIT_VALUE = 0.0;
+
+            // direct hop calculation
+            // m_new = m_old + lambda[0]
+            // m_old = 0 in this case
+            newHost.put(DIRECT_HOP, this.lambda[0]);
+
+            // create an all zero map for m_i values of "host"
+            for(int i = 1; i < this.hops; ++i){
+                newHost.put(i, INIT_VALUE); 
+            }
+            // add host w/ all 0 m_i values 
+            this.reach.put(host, newHost);
+        }
+
         // 0 input b/c we are updating the direct encounter metric value
         double oldValue = getReachFor(host, DIRECT_HOP);
 
@@ -187,21 +206,6 @@ public class HeraRouter extends ActiveRouter {
         // age reach values if they exist
         ageReachVals();
 
-        // host exists in reach case
-        if (!reach.containsKey(host)){
-            Map<Integer, Double> temp = new HashMap<Integer, Double>();
-
-            // initial reach value for all hop levels
-            double INIT_VALUE = 0.0;
-
-            // create an all zero dict for m_i values of "host"
-            for(int i = 0; i < this.hops; ++i){
-                temp.put(i, INIT_VALUE); 
-            }
-            // add host w/ all 0 m_i values 
-            this.reach.put(host, temp);
-        }
-        
         // return the corresponding map to input Host 
         // return inner_map of reach = (host : inner_map(int : double))
         return this.reach.get(host);
@@ -218,22 +222,12 @@ public class HeraRouter extends ActiveRouter {
 
         // host exists in reach case
         if (!reach.containsKey(host)){
-            Map<Integer, Double> temp = new HashMap<Integer, Double>();
-
-            // initial reach value for all hop levels
-            double INIT_VALUE = 0.0;
-
-            // create an all zero dict for m_i values of "host"
-            for(int i = 0; i < this.hops; ++i){
-                temp.put(i, INIT_VALUE); 
-            }
-            // add host w/ all 0 m_i values 
-            this.reach.put(host, temp);
+            return 0.0;
+        } else {
+            // returns double inside reach for a specific host's hoplvl
+            // similar to reach[host][hoplvl] if this were a 2d array
+            return this.reach.get(host).get(hopLvl);
         }
-        
-        // returns double inside reach for a specific host's hoplvl
-        // similar to reach[host][hoplvl] if this were a 2d array
-        return this.reach.get(host).get(hopLvl);
     }
 
     /**
@@ -260,21 +254,24 @@ public class HeraRouter extends ActiveRouter {
                 continue;
             }
             
-            // init map values for host reach has never seen to all 0 values
+            // if reach hasn't seen host before, init an all 0 hop metric map
+            // e.g. { host: {0: 0.0, 1: 0.0, 2: 0.0...,H: 0.0} }
             if ( !reach.containsKey( e.getKey() ) ){
+                double INIT_VAL = 0.0;
                 Map<Integer, Double> newHost = new HashMap<Integer, Double>();
                 for( int i = 0; i < this.hops; ++i){
-                    newHost.put(i, 0.0);
+                    newHost.put(i, INIT_VAL);
                 }
                 this.reach.put(e.getKey(), newHost);
             }
-                // update transitive hop values for h = 1,...,H
-                for( int h = 1; h < this.hops; ++h){
-                    // delta = how much you are changing old value by
-                    double delta = lambda[h] * othersReach.get(e.getKey()).get(h - 1);
-                    double rNew = this.reach.get(e.getKey()).get(h) + delta;
-                    this.reach.get(e.getKey()).put(h, rNew);
-                }
+
+            // update transitive hop values for h = 1,...,H
+            for( int h = 1; h < this.hops; ++h){
+                // delta = how much you are changing old value by
+                double delta = lambda[h] * othersReach.get(e.getKey()).get(h - 1);
+                double rNew = this.reach.get(e.getKey()).get(h) + delta;
+                this.reach.get(e.getKey()).put(h, rNew);
+            }
         }
     }
 
@@ -316,7 +313,6 @@ public class HeraRouter extends ActiveRouter {
         return this.reach;
     }
 
-    // 7/31/17 1:45PM same as prophet ver 
     @Override
     public void update() {
         super.update();
@@ -358,6 +354,14 @@ public class HeraRouter extends ActiveRouter {
                     continue; // skip messages that other one has
                 }
                 // main check for determining to pass message forward
+                // debugging omega stdout
+                System.out.println(m.getId() + " "
+                                + "FROM: " + m.getFrom() + " "
+                                + "TO: " + m.getTo() + " "
+                                + "Nodes: "
+                                + othRouter.getHost() + " " 
+                                + othRouter.omega(m.getTo()) + " " 
+                                + this.getHost() + " " + this.omega(m.getTo()));
                 if (othRouter.omega(m.getTo()) > this.omega(m.getTo())) {
                 // the other node has larger reach and possibility of delivery
                 messages.add(new Tuple<Message, Connection>(m,con));
@@ -387,18 +391,23 @@ public class HeraRouter extends ActiveRouter {
     public double omega(DTNHost host){
         ageReachVals();
 
-        // grab the map of values for the input host, 
-        // equivalent to grabbing column of matrix
-        Map<Integer, Double> hopMetric = this.getReachFor(host);
-        double reachability = 0;
+        // handle's case where host is not tracked
+        if (!(this.reach.containsKey(host))){
+            return 0;
+        } else {
 
-        // calculating the inner product
-        for (int h = 0; h < this.hops; ++h){
-            double elementMult = this.gamma[h] * this.reach.get(host).get(h);
-            reachability += elementMult;
+            // grab the map of values for the input host, 
+            // equivalent to grabbing column of matrix
+            Map<Integer, Double> hopMetric = this.getReachFor(host);
+            double reachability = 0;
+
+            // calculating the inner product
+            for (int h = 0; h < this.hops; ++h){
+                double elementMult = this.gamma[h] * this.reach.get(host).get(h);
+                reachability += elementMult;
+            }
+            return reachability;
         }
-
-        return reachability;
     }
 
     /**
