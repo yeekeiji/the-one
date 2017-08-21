@@ -40,8 +40,11 @@ class FileParser:
         # set default value for the path if no value is given
         if path == None:
             path = self.file
+            return path
 
         head, tail = ntpath.split(path)
+
+        return tail
 
     def getCoreName(self, rType):
         '''
@@ -455,11 +458,6 @@ class MsgStats(FileParser):
         '''
         return self.metrics
 
-    #def printMetrics():
-    #    '''
-    #        print the key-value pairs stored in the variable metrics
-    #    '''
-
 
 # util functions not part of a particular class
 def grabPairs(line,separator='='):
@@ -497,6 +495,32 @@ def grabPairs(line,separator='='):
 
     return line
 
+def add2Log(smallDF, bigDF, backup):
+    '''
+        concatenate two df log files containing simulation results.
+
+        Parameters
+        ----------
+        smallDF : string naming the smaller dataframe you want to add
+        bigDF : string naming the bigger dataframe that will grow larger
+        backup : string naming the file path + name you want to store a back up
+            of bigDF in before doing any concatenations
+        
+        Return
+        ------
+        void : all outputs are files being saved
+    '''
+    # load and assuming a std sep=','
+    df = pd.read_csv(smallDF)
+    masterDF = pd.read_csv(bigDF)
+
+    # store a back up before making any changes
+    masterDF.to_csv(backup, header=True, index=False)
+
+    # concatenate and store results
+    masterDF.append(df, ignore_index=True)
+    masterDF.to_csv(bigDF, header=True, index=False, mode='w')
+
 def main():
     # command line interface definitions
     parser = argparse.ArgumentParser(description=
@@ -523,6 +547,7 @@ fileType option flag : is one of the flags in {-e, -m, -s}
 \t passed in to run the simulation. It holds info like 
 \t Routers + Router.params
 \t-a : performs all info extraction in one call to python
+\t-c : concat the local sim results to the master sim results file
  ''') 
 
     # required argument definition. Files you need
@@ -538,11 +563,14 @@ fileType option flag : is one of the flags in {-e, -m, -s}
                         action='store_true', default=False)
     parser.add_argument('-a', '--all', help='automation w/ all parsers', \
                         action='store_true', default=False)
+    parser.add_argument('-c', '--addResults', help='add sim results to log', \
+                        action='store_true', default=False)
 
     # important call that looks at arguments you've passed in to script
     args = parser.parse_args()
     
     if args.EventLog:
+        # -e flag
         # ALL file inputs should be EventLogReport.txt files
         eventLogs = [EventLog(args.files[i].name) for i in \
             range(len(args.files))]
@@ -560,6 +588,7 @@ fileType option flag : is one of the flags in {-e, -m, -s}
             print(str(elem.calcSuccess()))
 
     if args.Specs:
+        # -s flag
         # these files are expected to be parsed 1 at a time.
         # don't need to have built in multi-file cases
         specFile = Specs(args.files[0].name)
@@ -569,6 +598,7 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         print(out)
 
     if args.MessageReport:
+        # -m flag
         # ALL file inputs should be MessageStatsReport.txt files
         # turn file names into iterable w/ MsgStats objs
         msgFiles = [MsgStats(args.files[i].name) for i in \
@@ -578,11 +608,78 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         for elem in msgFiles:
             elem.grabQuals()
             print(elem.getMetrics())
+
+    if args.addResults:
+        # -c flag
+        # expects 3 file names:
+        # smallDF, bigDF, backup
+        # give full path for backup so that it can be stored correctly
+        # assumed smallDF & bigDF inside the current dir .
+        smallDF = args.files[0].name
+        bigDF = args.files[1].name
+        backup = args.files[2].name
+
+        # concatenate & save a backup
+        add2Log(smallDF, bigDF, backup)
             
     if args.all:
-        # combined file parsing from one call of python interpretor
-        # specific to 
+        # condense file parsing to only one call of python interpretor
+        # expects a specific file order
+        # <base> <specs> <MsgStats> <Elog> <csvFile>
+        # expects csvFile to have a header
         
+        # output csv formatted line. 
+        header = []
+        row = []
+
+        # file 1, batch file
+        batchFile = FileParser( args.files[0].name )
+        header.append( 'batch' )
+        row.append( batchFile.getCoreName(0) )
+
+        # file 2, specFile name, router information
+        specFile = Specs(args.files[1].name)
+        header.append( 'specFile' )
+        row.append( specFile.getPathLeaf() )
+        
+        # process the specFile & add
+        specMap = specFile.grabSettings()
+        for elem in specMap:
+            header.append(elem)
+            row.append(specMap[elem])
+
+        # file 3, message stats
+        msgFile = MsgStats(args.files[2].name)
+        msgFile.grabQuals()
+        msgMetrics = msgFile.getMetrics()
+        for elem in msgMetrics:
+            header.append(elem)
+            row.append(msgMetrics[elem])
+
+        # file 4, replicas, success ratio 
+        eLog = EventLog(args.files[3].name)
+        eLog.parseAttr()
+        header.append('Replicas')
+        header.append('Delivery_Ratio')
+
+        # need string conversion here b/c all other vars are str
+        # will throw error if you try to use non-strings for print
+        row.append(str(eLog.nrofReps()))
+        row.append(str(eLog.calcSuccess()))
+
+        # create a row dataframe to append to local chunk
+        df = pd.DataFrame(columns = header)
+        df.loc[0] = [ row[i] for i in range(len(row)) ]
+        
+        # load local csv of sim results
+        # assuming std ',' delim file
+        # this is handling the mismatch of column cases in
+        # event that a new column is created
+        masterDF = pd.read_csv(args.files[4].name)
+        masterDF = masterDF.append(df, ignore_index=True)
+
+        # write back to file
+        masterDF.to_csv(args.files[4].name, sep=',', header=True, index=False)
 
 
 if __name__ == '__main__':
