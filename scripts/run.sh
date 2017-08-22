@@ -29,6 +29,7 @@ BASEFILE="$1"
 # since it's not guarenteed to run this script from batch folder
 # extract out the base file name
 BATCH=$(basename "$BASEFILE")
+BATCH_NOEXT="${BATCH%.*}"
 
 # Python script that has a command line interface to parse files
 #!/usr/bin/sh
@@ -53,7 +54,7 @@ for spec in "${@:2}"
 
         # run simulation & store stdout & stderr
         sh "$ONE"/one.sh -b 1 "$BASEFILE" "$spec" 2>&1 | tee \
-            "$ONE"/log/"$stem".log
+            "$ONE"/log/"$BATCH_NOEXT"/"$stem".log
 
         # only if the simulation exits correctly, process results
         if [ "$?" -eq 0 ]

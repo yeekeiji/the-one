@@ -543,7 +543,7 @@ def grabPairs(line,separator='='):
 
     return line
 
-def add2Log(smallDF, bigDF, backup):
+def add2Log(smallDF, bigDF):
     '''
         concatenate two df log files containing simulation results.
 
@@ -551,23 +551,26 @@ def add2Log(smallDF, bigDF, backup):
         ----------
         smallDF : string naming the smaller dataframe you want to add
         bigDF : string naming the bigger dataframe that will grow larger
-        backup : string naming the file path + name you want to store a back up
-            of bigDF in before doing any concatenations
         
         Return
         ------
         void : all outputs are files being saved
     '''
     # load and assuming a std sep=','
+    # assuming here that the smallDF file is NOT empty
     df = pd.read_csv(smallDF)
-    masterDF = pd.read_csv(bigDF)
 
-    # store a back up before making any changes
-    masterDF.to_csv(backup, header=True, index=False)
+    # checks for 1 and 0 here are for different types of empty files
+    # echo > file.txt creates a file.txt w/ size == 1
+    # touch file.txt creates a file.txt w/ size == 0
+    if os.stat(bigDF).st_size == 1 or os.stat(bigDF).st_size == 0:
+        df.to_csv(bigDF, header=True, index=False)
+    else:
+        masterDF = pd.read_csv(bigDF)
 
-    # concatenate and store results
-    masterDF.append(df, ignore_index=True)
-    masterDF.to_csv(bigDF, header=True, index=False, mode='w')
+        # concatenate and store results
+        masterDF.append(df, ignore_index=True)
+        masterDF.to_csv(bigDF, header=True, index=False)
 
 def main():
     # command line interface definitions
@@ -682,10 +685,9 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         # assumed smallDF & bigDF inside the current dir .
         smallDF = args.files[0].name
         bigDF = args.files[1].name
-        backup = args.files[2].name
 
         # concatenate & save a backup
-        add2Log(smallDF, bigDF, backup)
+        add2Log(smallDF, bigDF)
             
     if args.all:
         # condense file parsing to only one call of python interpretor
