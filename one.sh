@@ -11,6 +11,4 @@
 # when running Maxprop b/c of one of the network flow algs, will get this error
 java -Xmx8G -Djava.util.Arrays.useLegacyMergeSort=true \
  -cp target:lib/ECLA.jar:lib/DTNConsoleConnection.jar core.DTNSim $*
-
-
-
+ 
