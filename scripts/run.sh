@@ -38,7 +38,7 @@ PARSER="$SCRIPT_DIR"/FileParser.py
 
 # create a new file called local.log for processing.
 LOCAL_LOG="$(dirname "$BASEFILE")"/"$(date '+%y-%m-%d')".log
-echo > "$LOCAL_LOG"
+touch "$LOCAL_LOG"
 
 # CHANGE IF: placed master log file with all sim results differs from below
 MASTER_LOG="$ONE"/batch_settings/master.log
@@ -60,24 +60,25 @@ for spec in "${@:2}"
         if [ "$?" -eq 0 ]
         then 
             # find & store report names
-            report=$(python "$ONE"/scripts/FileParser.py -r "$BASEFILE")
+            report=$(python "$PARSER" -r "$BASEFILE")
             report="$ONE"/"$report"
             msgStatsFile="$report""$stem"_MessageStatsReport.txt
             eLogFile="$report""$stem"_EventLogReport.txt
 
-            # process results & store in a local file called local.log
+            # process results & store in a local file called local log
             python "$PARSER" -a "$BASEFILE" "$spec" \
                 "$msgStatsFile" "$eLogFile" "$LOCAL_LOG"
             
-            # back up the master log file
-            cp "$MASTER_LOG" "$(dirname "$MASTER_LOG")/"master.bak
-
-            # concatenate the log files, local remains unchanged
-            python "$PARSER" -c "$LOCAL_LOG" "$MASTER_LOG"
-            exit 0
         else
             # skip files that didn't run correctly.
             # their report files may be empty or other complications
             continue
         fi
     done
+
+
+# back up the master log file
+cp "$MASTER_LOG" "$(dirname "$MASTER_LOG")/"master.bak
+
+# concatenate the log files, local remains unchanged
+python "$PARSER" -c "$LOCAL_LOG" "$MASTER_LOG"

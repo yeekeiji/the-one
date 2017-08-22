@@ -234,7 +234,10 @@ class EventLog(FileParser):
             ------
             Float : ratio of #(delivered) / #(created)
         '''
-        return float(self.totalD) / float(self.totalC)
+        if self.totalC != 0.0:
+            return float(self.totalD) / float(self.totalC)
+        else:
+            return 0.0
 
     def parseAttr(self):
         '''
@@ -560,16 +563,14 @@ def add2Log(smallDF, bigDF):
     # assuming here that the smallDF file is NOT empty
     df = pd.read_csv(smallDF)
 
-    # checks for 1 and 0 here are for different types of empty files
-    # echo > file.txt creates a file.txt w/ size == 1
+    # checks for empty files
     # touch file.txt creates a file.txt w/ size == 0
-    if os.stat(bigDF).st_size == 1 or os.stat(bigDF).st_size == 0:
+    if os.stat(bigDF).st_size == 0: 
         df.to_csv(bigDF, header=True, index=False)
     else:
         masterDF = pd.read_csv(bigDF)
-
         # concatenate and store results
-        masterDF.append(df, ignore_index=True)
+        masterDF = masterDF.append(df, ignore_index=True)
         masterDF.to_csv(bigDF, header=True, index=False)
 
 def main():
@@ -743,12 +744,11 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         # this is handling the mismatch of column cases in
         # event that a new column is created
         # checks for empty file, if so write results, else append
-        if  os.stat(args.files[4].name).st_size == 1:
+        if  os.stat(args.files[4].name).st_size == 0:
             df.to_csv(args.files[4].name, sep=',', header=True, index=False)
         else:
             masterDF = pd.read_csv(args.files[4].name)
             masterDF = masterDF.append(df, ignore_index=True)
-
             # write back to file
             masterDF.to_csv(args.files[4].name, sep=',', header=True, index=False)
 
