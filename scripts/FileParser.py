@@ -388,6 +388,54 @@ class Specs(FileParser):
                     output[ pair[KEY_INDEX] ] = pair[VAL_INDEX]
         return output 
 
+class Base(FileParser):
+    '''
+        Base File parser. Primary goal is to seach through the base file for
+        the following information:
+
+        1. reports directory path
+    '''
+    settings = ['.reportDir']
+
+    def __init__(self, baseFile):
+        '''
+            constructor for a base file object.
+        '''
+        FileParser.__init__(self, baseFile)
+
+    def grabSettings(self):
+        '''
+            parses the base file for the value strings listed in the member
+            list 'settings'
+        '''
+        with open(self.file, 'r') as f:
+            # flag for handling different cases of values in file
+            output = {}
+            settingsFound = False
+            KEY_INDEX = 0
+            VAL_INDEX = 1
+            for line in f:
+                # skip comments 
+                if '#' in line:
+                    continue
+
+                elem = ''
+                for elem in self.settings:
+                    if elem in line:
+                        settingsFound = True
+                        break
+
+                if settingsFound:
+                    # reset the flag for next iteration
+                    settingsFound = False
+                    pair = grabPairs(line)
+                    
+                    if elem == '.reportDir':
+                        pair[KEY_INDEX] = 'ReportDir'
+
+                    output[ pair[KEY_INDEX] ] = pair[VAL_INDEX]
+        return output
+
 class MsgStats(FileParser):
     '''
         MessageStatsReport log parser. Extracts several metric values for final
@@ -563,6 +611,8 @@ fileType option flag : is one of the flags in {-e, -m, -s}
                         action='store_true', default=False)
     parser.add_argument('-a', '--all', help='automation w/ all parsers', \
                         action='store_true', default=False)
+    parser.add_argument('-r', '--reports', help='get report dir from base', \
+                        action='store_true', default=False)
     parser.add_argument('-c', '--addResults', help='add sim results to log', \
                         action='store_true', default=False)
 
@@ -608,6 +658,21 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         for elem in msgFiles:
             elem.grabQuals()
             print(elem.getMetrics())
+
+    if args.reports:
+        # -r flag
+        # expects a baseFile.txt input
+        # prints out the partial path of reports dir
+        # set in the baseFile.txt
+        baseFile = Base(args.files[0].name)
+        bmap = baseFile.grabSettings()
+        for elem in bmap:
+            if elem == 'ReportDir':
+                report = bmap[elem]        
+                break
+
+        print(report)
+
 
     if args.addResults:
         # -c flag
