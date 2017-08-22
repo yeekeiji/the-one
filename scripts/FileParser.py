@@ -3,6 +3,7 @@
 
 import argparse
 import ntpath
+import  os
 import shlex
 from subprocess import Popen, PIPE, STDOUT
 import pandas as pd
@@ -40,7 +41,6 @@ class FileParser:
         # set default value for the path if no value is given
         if path == None:
             path = self.file
-            return path
 
         head, tail = ntpath.split(path)
 
@@ -700,7 +700,7 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         # file 1, batch file
         batchFile = FileParser( args.files[0].name )
         header.append( 'batch' )
-        row.append( batchFile.getCoreName(0) )
+        row.append( batchFile.getPathLeaf() )
 
         # file 2, specFile name, router information
         specFile = Specs(args.files[1].name)
@@ -740,11 +740,15 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         # assuming std ',' delim file
         # this is handling the mismatch of column cases in
         # event that a new column is created
-        masterDF = pd.read_csv(args.files[4].name)
-        masterDF = masterDF.append(df, ignore_index=True)
+        # checks for empty file, if so write results, else append
+        if  os.stat(args.files[4].name).st_size == 1:
+            df.to_csv(args.files[4].name, sep=',', header=True, index=False)
+        else:
+            masterDF = pd.read_csv(args.files[4].name)
+            masterDF = masterDF.append(df, ignore_index=True)
 
-        # write back to file
-        masterDF.to_csv(args.files[4].name, sep=',', header=True, index=False)
+            # write back to file
+            masterDF.to_csv(args.files[4].name, sep=',', header=True, index=False)
 
 
 if __name__ == '__main__':
