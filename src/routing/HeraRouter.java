@@ -353,15 +353,6 @@ public class HeraRouter extends ActiveRouter {
                 if ( othRouter.hasMessage( m.getId() ) ) {
                     continue; // skip messages that other one has
                 }
-                // main check for determining to pass message forward
-                // debugging omega stdout
-                System.out.println(m.getId() + " "
-                                + "FROM: " + m.getFrom() + " "
-                                + "TO: " + m.getTo() + " "
-                                + "Nodes: "
-                                + othRouter.getHost() + " " 
-                                + othRouter.omega(m.getTo()) + " " 
-                                + this.getHost() + " " + this.omega(m.getTo()));
                 if (othRouter.omega(m.getTo()) > this.omega(m.getTo())) {
                 // the other node has larger reach and possibility of delivery
                 messages.add(new Tuple<Message, Connection>(m,con));
