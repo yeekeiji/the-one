@@ -46,5 +46,8 @@ sort -k 1 node* > node_master.txt
 # shift data to lower values 
 python "$shiftScript" taxi.log node_master.txt
 
+# combine data with the header generated in last command
+cat node_master.txt >> nodeDate.txt
+
 # rename the final nodeData.txt file w/ nrofTaxi files used
 mv nodeData.txt nodeData"$taxiCnt".txt
