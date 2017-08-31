@@ -37,7 +37,7 @@ BATCH_NOEXT="${BATCH%.*}"
 PARSER="$SCRIPT_DIR"/FileParser.py
 
 # create a new file called local.log for processing.
-LOCAL_LOG="$(dirname "$BASEFILE")"/"$(date '+%y-%m-%d')".log
+LOCAL_LOG="$(dirname "$BASEFILE")"/"$(date '+%y-%m-%d-%k:%M')".log
 touch "$LOCAL_LOG"
 
 # CHANGE IF: placed master log file with all sim results differs from below

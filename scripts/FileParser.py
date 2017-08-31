@@ -196,7 +196,7 @@ class EventLog(FileParser):
     def nrofReps(self):
         '''
             Finds the total number of messages created.
-            nrofReps = #( unique msgs ) + #( replicas )
+            nrofReps = #( copies encountered )
             
             Return
             ------
@@ -410,6 +410,10 @@ class Base(FileParser):
         '''
             parses the base file for the value strings listed in the member
             list 'settings'
+
+            Return
+            ------
+            output : map of each key-value pair found in the settings file.
         '''
         with open(self.file, 'r') as f:
             # flag for handling different cases of values in file
@@ -672,8 +676,12 @@ fileType option flag : is one of the flags in {-e, -m, -s}
         bmap = baseFile.grabSettings()
         for elem in bmap:
             if elem == 'ReportDir':
-                report = bmap[elem]        
+                report = bmap[elem]
                 break
+
+        # ensure there exists a trailing / in the return file path
+        if report[-1] != '/':
+            report = report + '/'
 
         print(report)
 
