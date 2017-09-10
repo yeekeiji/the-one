@@ -41,7 +41,7 @@ LOCAL_LOG="$(dirname "$BASEFILE")"/"$(date '+%y-%m-%d-%k:%M')".log
 touch "$LOCAL_LOG"
 
 # CHANGE IF: placed master log file with all sim results differs from below
-MASTER_LOG="$ONE"/batch_settings/master.log
+MASTER_LOG="$ONE"/batch_settings/master.csv
 
 # for each spec file inputted as an arg, run one.sh base.txt specN.txt
 # and process results
