@@ -26,7 +26,7 @@ import core.SimClock;
  * Implementation of the Hop Expansion Routing Algorithm (HERA) as described in 
  * <I>Paper Name Here</I> by
  */
-public class HeraRouter extends ActiveRouter {
+public class HeraV2Router extends ActiveRouter {
     /** Constants Need to go here */
     /** local transitivity trust scaling constants, default values */
     public static final double[] DEFAULT_LAMBDA = {1, .5, .05, .005, .0005};
@@ -41,7 +41,7 @@ public class HeraRouter extends ActiveRouter {
 
     /** Namespaces here & Settings file strings*/
     /** Hera router's setting namespace ({@value})*/
-    public static final String HERA_NS = "HeraRouter";
+    public static final String HERA_NS = "HeraV2Router";
     /**
      * Number of seconds in time unit -setting id ({@value}).
      * How many seconds one time unit is when calculating aging of
@@ -88,12 +88,12 @@ public class HeraRouter extends ActiveRouter {
      * the given settings object.
      * @param s the settings object
      */
-    public HeraRouter(Settings s) {
+    public HeraV2Router(Settings s) {
         super(s);
         Settings heraSettings = new Settings(HERA_NS);
         secondsInTimeUnit = heraSettings.getInt(SECONDS_IN_UNIT_S);
 
-        // checking for HeraRouter.lambda = x, y, z
+        // checking for HeraV2Router.lambda = x, y, z
         // Also checks for nrofLambda values. Need both
         if (heraSettings.contains(HOPS_S) &&
                 heraSettings.contains(LAMBDA_S)) {
@@ -107,7 +107,7 @@ public class HeraRouter extends ActiveRouter {
             lambda = DEFAULT_LAMBDA;
         }
 
-        // check for HeraRouter.gamma & HeraRouter.sizeofGamma
+        // check for HeraV2Router.gamma & HeraV2Router.sizeofGamma
         if (heraSettings.contains(HOPS_S) && 
                 heraSettings.contains(GAMMA_S)) {
             // use custom gamma settings from settings file
@@ -132,7 +132,7 @@ public class HeraRouter extends ActiveRouter {
      * Copy constructor.
      * @param r The router prototype where settings values are copied from
      */
-    protected HeraRouter(HeraRouter r) {
+    protected HeraV2Router(HeraV2Router r) {
         super(r);
         this.secondsInTimeUnit = r.secondsInTimeUnit;
         this.alpha = r.alpha;
@@ -237,13 +237,13 @@ public class HeraRouter extends ActiveRouter {
      */
     private void updateTransitiveReach(DTNHost host){
         MessageRouter otherRouter = host.getRouter();
-        assert otherRouter instanceof HeraRouter : "Hera only works " +
+        assert otherRouter instanceof HeraV2Router : "Hera only works " +
             " with other routers of the same type";
 
         // age reach values before doing any updates
         ageReachVals();
         Map<DTNHost, Map<Integer, Double>> othersReach = 
-            ((HeraRouter)otherRouter).getReach();
+            ((HeraV2Router)otherRouter).getReach();
 
         for (Map.Entry<DTNHost, Map<Integer, Double>> e : othersReach.entrySet()){
             
@@ -342,7 +342,7 @@ public class HeraRouter extends ActiveRouter {
          * reach metric value (omega var in paper) than the other host */
         for ( Connection con : getConnections() ) {
             DTNHost other = con.getOtherNode( getHost() );
-            HeraRouter othRouter = ( HeraRouter )other.getRouter();
+            HeraV2Router othRouter = ( HeraV2Router )other.getRouter();
 
             if (othRouter.isTransferring()) {
                 continue; // skip hosts that are transferring
@@ -352,7 +352,7 @@ public class HeraRouter extends ActiveRouter {
                 if ( othRouter.hasMessage( m.getId() ) ) {
                     continue; // skip messages that other one has
                 }
-                if (othRouter.omega(m.getTo()) > this.omega(m.getTo())) {
+                if (othRouter.omega(m.getTo()) >= this.omega(m.getTo())) {
                 // the other node has larger reach and possibility of delivery
                 messages.add(new Tuple<Message, Connection>(m,con));
                 }
@@ -411,12 +411,12 @@ public class HeraRouter extends ActiveRouter {
         public int compare(Tuple<Message, Connection> tuple1, 
             Tuple<Message, Connection> tuple2) {
             // hop metric of tuple1's message with tuple1's connection
-            double r1 = ((HeraRouter)tuple1.getValue().
+            double r1 = ((HeraV2Router)tuple1.getValue().
                     getOtherNode(getHost()).getRouter()).omega(
                     tuple1.getKey().getTo());
 
             // hop metric of tuple2's message with tuple2's connection
-            double r2 = ((HeraRouter)tuple2.getValue().
+            double r2 = ((HeraV2Router)tuple2.getValue().
                     getOtherNode(getHost()).getRouter()).omega(
                     tuple2.getKey().getTo());
              
@@ -453,7 +453,7 @@ public class HeraRouter extends ActiveRouter {
 
     @Override
     public MessageRouter replicate() {
-        HeraRouter r = new HeraRouter(this);
+        HeraV2Router r = new HeraV2Router(this);
         return r;
     }
 
