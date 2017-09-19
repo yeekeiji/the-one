@@ -539,7 +539,7 @@ def grabPairs(line,separator='='):
     '''
     # strips the line into a list holding [key, value]
     # albeit possibly not in the correct form 
-    line = line.split(sep=separator)
+    line = line.split(separator)
     
     # strips whitespace from key and value elements in the list
     for i in range(len(line)):
