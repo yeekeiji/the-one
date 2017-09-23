@@ -13,7 +13,7 @@
 # output : filtered version of original dataFile with only rows with matches
 #   to specific destination nodes or watchnodes.
 #   Output of -1 : nodeName + Mvalues.txt. Ex. r199Mvalues.txt
-#   Output of -2 : nodeName + compact.txt. Ex. s122only.txt
+#   Output of -2 : nodeName + onlyX.txt. Ex. s122only.txt
 
 # useful for the cluster scenario where we are looking at mutliple nodes
 # decouples node data from dumpFile.txt that's generated from HeraDebug Router
@@ -31,8 +31,10 @@ else if [ "$1" -eq -2 ]
         for elem in "${@:3}"
         do
             echo "Grabbing data with destination node $elem"
+            prefix=$(basename "$2")
+            prefix="${prefix:0:4}"
             awk -F "," -v var="$elem" '{if($3 == var) {print}}' "$2" > \
-            "$elem"only.txt;
+            "$prefix"-"$elem"only.txt;
         done
     fi
 fi
